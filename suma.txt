@@ -1,0 +1,4 @@
+qslhoomolkqcmuyu
+
+
+mongodb+srv://ruwaidhafarook:bexxOXYURXKfDiji@cluster0.npttv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
