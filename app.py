@@ -1,10 +1,11 @@
 import smtplib
-from flask import Flask, request, render_template, redirect,url_for
+from flask import Flask, request, render_template, redirect, url_for
 from email.message import EmailMessage
-from datetime import datetime
-import threading
-import time
 from pymongo import MongoClient
+from bson.objectid import ObjectId  # Import ObjectId for MongoDB
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
+import pytz
 
 app = Flask(__name__)
 
@@ -18,13 +19,25 @@ reminders_collection = db.reminders  # Name of your collection
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 GMAIL_USERNAME = "ruwaidhafarook@gmail.com"  # Replace with your email
-GMAIL_PASSWORD = "ylkhveogvljrjsnx"  # Replace with your app password or email password
+GMAIL_PASSWORD = "ylkhveogvljrjsnx"  # Replace with your app password
 
-@app.route('/', methods=['GET', 'POST'])
+# Scheduler setup
+scheduler = BackgroundScheduler()
+
+# Handle favicon error by ignoring the request
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204  # Return an empty response
+
+@app.route('/', methods=['GET'])
+def home():
+    return render_template('home.html')
+
+@app.route('/index', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         event_name = request.form.get('event_name')
-        date_time_str = request.form.get('date_time')
+        date_time_str = request.form.get('date_time')  # This will have the format '2024-10-21T15:24'
         email = request.form.get('email')
 
         if event_name and date_time_str and email:
@@ -34,11 +47,57 @@ def index():
                 "date_time": date_time_str,
                 "email": email
             })
+
+            # Convert the datetime string to a datetime object
+            scheduled_time = datetime.fromisoformat(date_time_str)  # Parse ISO format
+
+            # Schedule the email to be sent at the specified time
+            scheduler.add_job(send_reminder_email, 'date', run_date=scheduled_time, args=[email, event_name])
+
+            # Send email immediately
+            send_reminder_email(email, event_name)
+
             return redirect(url_for('reminder_success'))
         else:
             return 'Please provide event name, date/time, and email address.'
 
     return render_template('index.html')
+@app.route('/reminders')
+def reminders():
+    reminders = reminders_collection.find()
+    return render_template('reminders.html', reminders=reminders)
+
+@app.route('/edit_reminder/<reminder_id>', methods=['GET', 'POST'])
+def edit_reminder(reminder_id):
+    reminder = reminders_collection.find_one({"_id": ObjectId(reminder_id)})
+    if request.method == 'POST':
+        event_name = request.form.get('event_name')
+        date_time_str = request.form.get('date_time')
+        email = request.form.get('email')
+
+        # Update reminder in the database
+        reminders_collection.update_one(
+            {"_id": ObjectId(reminder_id)},
+            {"$set": {"event_name": event_name, "date_time": date_time_str, "email": email}}
+        )
+
+        # Convert the datetime string to a datetime object
+        scheduled_time = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M')  # Adjust format as necessary
+        # Schedule the updated email to be sent at the new specified time
+        scheduler.add_job(send_updated_reminder_email, 'date', run_date=scheduled_time, args=[email, event_name, date_time_str])
+
+        return redirect(url_for('reminders'))
+
+    return render_template('edit_reminder.html', reminder=reminder)
+
+@app.route('/delete_reminder/<reminder_id>', methods=['POST'])
+def delete_reminder(reminder_id):
+    reminders_collection.delete_one({"_id": ObjectId(reminder_id)})
+    return redirect(url_for('reminders'))
+
+@app.route('/reminder_success')
+def reminder_success():
+    return render_template('success.html')
 
 def send_reminder_email(to_email, event_name):
     subject = "Reminder for Your Scheduled Event"
@@ -59,28 +118,26 @@ def send_reminder_email(to_email, event_name):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
-@app.route('/reminder_success')
-def reminder_success():
-    return render_template('success.html')
+def send_updated_reminder_email(to_email, event_name, date_time):
+    subject = "Your Event Reminder has been Updated"
+    body = f"Dear User,\n\nYour event: '{event_name}' has been updated with new details.\n\nNew Event Date/Time: {date_time}\n\nBest regards,\nYour Reminder App Team"
 
-def check_reminders():
-    while True:
-        current_time = datetime.now()
-        print(f"Current Time: {current_time}")
-        reminders = reminders_collection.find()
-        
-        for reminder in reminders:
-            event_time = datetime.strptime(reminder['date_time'], '%Y-%m-%dT%H:%M')
-            print(f"Checking reminder for event '{reminder['event_name']}' at {event_time}")
+    msg = EmailMessage()
+    msg.set_content(body)
+    msg['Subject'] = subject
+    msg['From'] = GMAIL_USERNAME
+    msg['To'] = to_email
 
-            if current_time >= event_time:
-                print(f"Sending email for event '{reminder['event_name']}' to {reminder['email']}")
-                send_reminder_email(reminder['email'], reminder['event_name'])
-                reminders_collection.delete_one({"_id": reminder['_id']})
-
-        time.sleep(60)  # Check every minute
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(GMAIL_USERNAME, GMAIL_PASSWORD)
+            server.send_message(msg)
+            print(f"Updated reminder email sent to {to_email} for event '{event_name}'.")
+    except Exception as e:
+        print(f"Failed to send updated reminder email: {e}")
 
 if __name__ == '__main__':
-    # Start the background thread to check for reminders
-    threading.Thread(target=check_reminders, daemon=True).start()
+    # Start the scheduler
+    scheduler.start()
     app.run(debug=True)
