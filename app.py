@@ -85,6 +85,10 @@ def edit_reminder(reminder_id):
 
         # Convert the datetime string to a datetime object
         scheduled_time = datetime.fromisoformat(date_time_str)  # Parse ISO format
+        
+        # Send email immediately after updating
+        send_updated_reminder_email(email, event_name, date_time_str)
+        
         # Schedule the updated email to be sent at the new specified time
         scheduler.add_job(send_updated_reminder_email, 'date', run_date=scheduled_time, args=[email, event_name, date_time_str])
 
