@@ -65,6 +65,8 @@ def index():
 @app.route('/reminders')
 def reminders():
     reminders = reminders_collection.find()
+    current_time = datetime.now()  # Get the current time for comparison
+
     return render_template('reminders.html', reminders=reminders)
 
 @app.route('/edit_reminder/<reminder_id>', methods=['GET', 'POST'])
@@ -82,7 +84,7 @@ def edit_reminder(reminder_id):
         )
 
         # Convert the datetime string to a datetime object
-        scheduled_time = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M')  # Adjust format as necessary
+        scheduled_time = datetime.fromisoformat(date_time_str)  # Parse ISO format
         # Schedule the updated email to be sent at the new specified time
         scheduler.add_job(send_updated_reminder_email, 'date', run_date=scheduled_time, args=[email, event_name, date_time_str])
 
