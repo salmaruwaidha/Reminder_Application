@@ -50,8 +50,6 @@
             max-height: 400px;
             overflow-y: auto;
             margin-top: 20px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
         }
 
         table {
@@ -71,10 +69,6 @@
             font-size: 1.1em;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            position: sticky;
-            top: 0;
-            background: #6c63ff;
-            z-index: 1;
         }
 
         td {
@@ -82,11 +76,6 @@
             color: #555;
             vertical-align: middle;
             font-size: 1em;
-        }
-
-        /* Specific column width adjustments */
-        .event-name {
-            width: 300px; /* Adjust this value to change the width of the Event Name column */
         }
 
         .btn-image {
@@ -121,42 +110,41 @@
         <h1>Your Reminders</h1>
         <p class="description">Reminder List</p>
         
-        <!-- Table Name outside the table -->
-        <h2 style="text-align: center; color: #333; font-size: 1.5em; margin-bottom: 10px;"></h2>
+        <h2 style="text-align: center; color: #333; font-size: 1.5em; margin-bottom: 20px;">Reminder Table</h2>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th class="event-name">Event Name</th>
-                        <th class="date-time">Date and Time</th>
-                        <th>Email</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reminder in reminders %}
-                    <tr>
-                        <td class="event-name">{{ reminder.event_name }}</td>
-                        <td class="date-time">{{ reminder.date_time }}</td>
-                        <td>{{ reminder.email }}</td>
-                        <td>
-                            <div class="action-btns">
-                                <a href="{{ url_for('edit_reminder', reminder_id=reminder._id) }}" class="btn-image">
-                                    <img src="{{ url_for('static', filename='images/edit.png') }}" alt="Edit">
-                                </a>
-                                <form action="{{ url_for('delete_reminder', reminder_id=reminder._id) }}" method="POST" style="display:inline;">
-                                    <button type="submit" class="btn-image">
-                                        <img src="{{ url_for('static', filename='images/delete.png') }}" alt="Delete">
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Event Name</th>
+                    <th style="width: 200px;">Date and Time</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reminder in reminders %}
+                <tr>
+                    <td>{{ reminder.event_name }}</td>
+                    <td>{{ reminder.date_time }}</td>
+                    <td>{{ reminder.email }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="{{ url_for('edit_reminder', reminder_id=reminder._id) }}" class="btn-image">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAe1BMVEX///8AAAAwMDDR0dH5+fnW1tZVVVX09PTz8/OQkJBMTEyUlJT39/fw8PAoKCjb29tcXFxhYWFoaGg/Pz80NDTl5eWLi4vFxcWenp5DQ0MhISFubm69vb0aGhqgoKCnp6ewsLAQEBB+fn62trZ0dHQTExOEhIQ5OTl7e3v/y/ziAAAEuUlEQVR4nO2d2VLjMBBF7eCJmTCBQBLArAkwhP//wmG15ViyWp0h8hX3PKWKKuqeUtvyIrWzjBBCCCGEEEIIIYQQQgghhASyvJstRpvT+z+xg3wTJ7P8i+cidpjv4Cg3OJ7GjvP/ecpbXCWneJ1vkdoonm0LpqZoEXwt1MPYsf4fnRL9YJSMonUEUypUp2Aqio4S/VRMoFB7BVM4FntK9AP0qd8riH4sekoUv1BFgnm+gL3TEJToB2exkyoRjuAbF7Gz6vglNzyOnVXJiVzxV+ysSuSjeBQ7qhbxKI5jJ1UjHcVF7KCBFKv6p1BxFC+siln+u/4tU5xHTKtgnJunDpHiU8S44YzfM4eN4k3EvKEU48/QQYoRAwczrlMHFOp9xMChTIzcYsVZxMCBFFUrubBQgQT/TLayixRPIyYOpeqkFxQq0AgWc0t+ryKQYGkT9BYqUImWG0cV9ioCjWCxcAj2FiqQ4KFbsGcUgUp02ifoVAQSLEe9go5CBSrR8tgjaFUEEpxeeQUthQpUolP/CFoUkQRvRYJbhYpUolJBU/EAaASXckGzUHEIEkR8sj1dBwniKS5DBdEKdfk3WBBLcanwe+Uxdm4xSkGcF9oBbz9NrmPnFqMUxHk9oSxRHEHlCL7Ezi0mYJGFyUPs3GKUgs+xc4tRCuKU6EHqI6gUPI+dWwwF0QUvdII4d4UU/KGCl7Fzi7mhoJW72LnFJD+CjzpBnKVOFKTgwFnpBFexc4uhILrgvU4Q59E9Be3gLEtPfgQvUx9BCv5QQZztrkd+GQoOmuQFf+sED2LnFnNOQQoOm2cK/kxBnJ4PD6kL6q5F1yexc8spx36fLkCCWVZs73JNTTBrb8WW8HcZO3EwYYUKKNi0RBABJGi0Z5YXKtQIrudl/VuqeIUkeJHnk1pRWKi3SILvrdWquvOdaNKAKtFs+p550zT38yuC9XP8fHxfNceir1DBBLOvbgiT+ozqORbRmo42S++bhlS9xyKaoHnTNJcciyM0wcxML5g08Dqqtld0TZpJw64I2L55S8RoDmcr1EXp/k8DpbOHqeq7Rt3gCVqeXfRMGgvED6hY2pJU9R+3Jg1IQesGA8ekMYds2vxkMzQnjUaxghQsrILmpFE3YcMcQfe6tc4FHOYIZpmrQ1dr0njrNDeJGHIX+va7tiYNVMH+VzHNsVg+gJZoVvT3BwLr7mvDt9OnQpzhW3i/XjABV5z6BM0LOEgkLwwRbyYaJD2Q1jj7JroIdtaf3kAfiPaL7obbS7hHTm0O173VeY2zhMRF336m8Qp8+N5xP9Y+h3rr4sTVRWeGs0zUg3UV6fwuher8xNJt7QX/5GLQueiuHlHvkByctvSujtI4uRi0LrrPkjm5GDS7tjYpnVwMvl77vqCtS5PycdE9xtlIF8xDno/SO7kYlPlZUlNflynee1xCCCGEeDg5GDK7X/rfyb4hEo/j3Zq6Fd2vvQ2PnVZ5qDZr7Z0dPnisbKm6d/R3Or6XL0NB363dvVxmWOi/Wu37XNhQ0H+1GuFM+oZ+uYCyxcXe0bcBVX6mYe/s8FQFYxBXekF1n4u9spPga6Gez0dDprrkgz9CCCGEEEIIIYQQQgghhKDwD8gZRSJlYltwAAAAAElFTkSuQmCC" alt="Edit">
+                            </a>
+
+                            <form action="{{ url_for('delete_reminder', reminder_id=reminder._id) }}" method="POST" class="btn-image">
+                                <button type="submit" class="btn-image">
+                                    <img src="data:image/png;base64,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" alt="Delete">
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </body>
 </html>
+
